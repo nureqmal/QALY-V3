@@ -1,5 +1,8 @@
 import json
 import requests
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timezone, timedelta
 import streamlit as st
 
@@ -50,10 +53,32 @@ def send_whatsapp(message: str):
     except Exception:
         pass
 
-def notify(message: str):
-    """Send notification to both Telegram and WhatsApp."""
+def send_email(subject: str, message: str):
+    """Send an email notification via Gmail SMTP (App Password)."""
+    try:
+        sender    = st.secrets["email"]["sender"]
+        password  = st.secrets["email"]["app_password"]
+        recipient = st.secrets["email"]["recipient"]
+        to_list   = recipient if isinstance(recipient, list) else [r.strip() for r in str(recipient).split(",")]
+
+        msg          = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"]    = sender
+        msg["To"]      = ", ".join(to_list)
+        msg.attach(MIMEText(message, "plain"))
+        msg.attach(MIMEText(message.replace("\n", "<br>"), "html"))
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
+            server.login(sender, password)
+            server.sendmail(sender, to_list, msg.as_string())
+    except Exception:
+        pass
+
+def notify(message: str, subject: str = "Kimya Centre — New Update"):
+    """Send notification to Telegram, WhatsApp, and Email."""
     send_telegram(message)
     send_whatsapp(message)
+    send_email(subject, message)
 
 # ── Core load / save (list-based, e.g. sales.json → key "sales") ─────────────
 def _key(filename):
