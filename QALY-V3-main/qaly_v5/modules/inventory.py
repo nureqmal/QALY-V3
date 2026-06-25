@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from modules.utils import load, save, save_dict, load_dict, get_theme_colors, send_telegram
+from modules.utils import load, save, save_dict, load_dict, get_theme_colors, notify
 def show():
     C = get_theme_colors()
     st.markdown(f"<div class='page-title'>Inventory & Costing</div><div class='page-sub'>Raw materials, stock levels, product cost breakdown</div>", unsafe_allow_html=True)
@@ -51,11 +51,12 @@ def show():
                         save("inventory.json", inventory)
                         # Check if newly added/updated item is low stock
                         if stock_qty <= reorder_pt and reorder_pt > 0:
-                            send_telegram(
+                            notify(
                                 f"⚠️ <b>Low Stock Alert!</b>\n"
                                 f"📦 {mat_name.strip()}\n"
                                 f"📉 Stock: {stock_qty} {unit} (min {reorder_pt})\n"
-                                f"🏭 Supplier: {supplier or '—'}"
+                                f"🏭 Supplier: {supplier or '—'}",
+                                subject="Kimya Centre — Low Stock Alert"
                             )
                         st.success("Saved!")
                         st.rerun()
